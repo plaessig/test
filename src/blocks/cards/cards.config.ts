@@ -1,12 +1,20 @@
 import { createOptimizedPicture } from '../../../scripts/aem.js';
-import { extractConfigRows, filterContentRows } from '../../utils/block-config.js';
+import { extractConfigRows, filterContentRows } from '../../utils/block-config.ts';
+
+interface CardData {
+  picture: string;
+  body: string;
+}
+
+interface CardsProps {
+  cards: CardData[];
+  [key: string]: any; // For dynamic config props like borderColor, theme, etc.
+}
 
 /**
  * Extract card data from the block element
- * @param {Element} block - The block element
- * @returns {Object} Props for the Cards component
  */
-export function extractCardData(block) {
+export function extractCardData(block: Element): CardsProps {
   // Extract config rows (rows without images in first cell)
   const config = extractConfigRows(block);
 
@@ -14,11 +22,11 @@ export function extractCardData(block) {
   const contentRows = filterContentRows(block);
 
   // Extract card data from content rows only
-  const cardData = contentRows.map((row) => {
+  const cardData: CardData[] = contentRows.map((row) => {
     const cells = [...row.children];
 
     // First cell is the image
-    const imageDiv = cells[0];
+    const imageDiv = cells[0] as HTMLElement;
     let pictureHTML = '';
 
     if (imageDiv) {
@@ -30,7 +38,7 @@ export function extractCardData(block) {
     }
 
     // Second cell is the body
-    const bodyDiv = cells[1];
+    const bodyDiv = cells[1] as HTMLElement;
 
     return {
       picture: pictureHTML,

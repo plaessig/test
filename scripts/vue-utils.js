@@ -24,12 +24,11 @@ export function createVueBlockDecorator(VueComponent, dataExtractor) {
     const app = createApp(VueComponent, props);
     app.mount(block);
 
+
     // Store app instance for potential cleanup
     block.__vueApp = app;
 
     return app;
   };
 }
-
-
 

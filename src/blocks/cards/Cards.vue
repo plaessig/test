@@ -11,28 +11,28 @@
   </ul>
   <p>{{ processText }}</p>
 </template>
-<script setup>
-import {computed, defineProps} from 'vue';
-import {slugify} from "../../utils/string-utils.js";
+<script setup lang="ts">
+import { computed } from 'vue';
+import { slugify } from "../../utils/string-utils.ts";
 
-const processText  = computed(() => {
-  return slugify('hello world');
+interface CardData {
+  picture: string;
+  body: string;
+}
+
+interface Props {
+  cards: CardData[];
+  borderColor?: string;
+  theme?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  borderColor: '#dadada',
+  theme: 'default',
 });
 
-defineProps({
-  cards: {
-    type: Array,
-    required: true,
-  },
-  // Optional props that authors can configure
-  borderColor: {
-    type: String,
-    default: '#dadada',
-  },
-  theme: {
-    type: String,
-    default: 'default',
-  },
+const processText = computed(() => {
+  return slugify('hello world');
 });
 </script>
 

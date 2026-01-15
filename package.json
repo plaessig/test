@@ -6,12 +6,13 @@
   "description": "Starter project for Adobe Helix",
   "scripts": {
     "start": "vite --port 3000",
-    "build": "node scripts/build-blocks.js",
-    "build:watch": "nodemon --watch src --ext vue,css,js,ts,json --ignore blocks/** --exec \"node scripts/build-blocks.js\"",
+    "build": "tsx scripts/build-blocks.ts",
+    "build:watch": "nodemon --watch src --ext vue,css,js,ts,json --ignore blocks/** --exec \"tsx scripts/build-blocks.ts\"",
     "lint:js": "eslint .",
     "lint:css": "stylelint \"src/blocks/**/*.css\" \"styles/*.css\"",
     "lint": "npm run lint:js && npm run lint:css",
-    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix"
+    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix",
+    "type-check": "vue-tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "7.28.6",
+    "@types/node": "^22.10.5",
     "@vitejs/plugin-vue": "6.0.3",
     "eslint": "8.57.1",
     "eslint-config-airbnb-base": "15.0.0",
@@ -37,6 +39,9 @@
     "nodemon": "^3.1.9",
     "stylelint": "16.26.1",
     "stylelint-config-standard": "39.0.1",
-    "vue-eslint-parser": "^10.2.0"
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vue-eslint-parser": "^10.2.0",
+    "vue-tsc": "^2.2.0"
   }
 }

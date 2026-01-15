@@ -5,7 +5,7 @@
 /**
  * Truncate string to specified length
  */
-export function truncate(str, maxLength) {
+export function truncate(str: string, maxLength: number): string {
   if (!str || str.length <= maxLength) return str;
   return str.substring(0, maxLength) + '...';
 }
@@ -13,7 +13,7 @@ export function truncate(str, maxLength) {
 /**
  * Convert string to slug format
  */
-export function slugify(str) {
+export function slugify(str: string): string {
   return str
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')

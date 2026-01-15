@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/// <reference types="node" />
+
 /**
  * Build script for Vue-based AEM Edge Delivery Services blocks
  *
@@ -7,17 +9,17 @@
  * decorators in blocks/. The generated files should not be committed to git.
  *
  * Usage:
- *   node scripts/build-blocks.js
+ *   tsx scripts/build-blocks.ts
  *   npm run build
  *   npm run build:watch
  */
 
 import { build } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { resolve, join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { readdir, readFile, writeFile, mkdir, copyFile, rm } from 'fs/promises';
-import { existsSync } from 'fs';
+import { resolve, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readdir, readFile, writeFile, mkdir, copyFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,7 +33,7 @@ const EXPORT_FUNCTION_REGEX = /export\s+function\s+(\w+)/;
 /**
  * Get all block directories from src/blocks
  */
-async function getBlockDirectories() {
+async function getBlockDirectories(): Promise<string[]> {
   if (!existsSync(srcBlocksDir)) {
     return [];
   }
@@ -45,19 +47,19 @@ async function getBlockDirectories() {
 /**
  * Find block files in a directory
  */
-async function findBlockFiles(blockSrcDir) {
+async function findBlockFiles(blockSrcDir: string) {
   const files = await readdir(blockSrcDir);
   return {
     vueFile: files.find((f) => f.endsWith('.vue')),
     cssFile: files.find((f) => f.endsWith('.css')),
-    configFile: files.find((f) => f.endsWith('.config.js')),
+    configFile: files.find((f) => f.endsWith('.config.ts') || f.endsWith('.config.js')),
   };
 }
 
 /**
  * Compile Vue component to JavaScript
  */
-async function compileVueComponent(blockName, vueFile, blockSrcDir, blockDistDir) {
+async function compileVueComponent(blockName: string, vueFile: string, blockSrcDir: string, blockDistDir: string): Promise<void> {
   const vueFilePath = join(blockSrcDir, vueFile);
 
   await build({
@@ -72,7 +74,7 @@ async function compileVueComponent(blockName, vueFile, blockSrcDir, blockDistDir
       },
       outDir: blockDistDir,
       emptyOutDir: false,
-      minify: false, // Don't minify - keeps variable names predictable
+      minify: true, // Minify for production performance
       rollupOptions: {
         // External: only Vue and scripts/ directory (runtime dependencies)
         external: (id) => {
@@ -96,7 +98,7 @@ async function compileVueComponent(blockName, vueFile, blockSrcDir, blockDistDir
  * Bundle any JavaScript file (config, utils, etc.) with dependencies inlined
  * This uses the same bundling strategy as Vue components
  */
-async function bundleJavaScript(entryPath, outputFileName, outputDir) {
+async function bundleJavaScript(entryPath: string, outputFileName: string, outputDir: string): Promise<void> {
   await build({
     configFile: false,
     build: {
@@ -108,7 +110,7 @@ async function bundleJavaScript(entryPath, outputFileName, outputDir) {
       },
       outDir: outputDir,
       emptyOutDir: false,
-      minify: false, // Don't minify - keeps variable names predictable
+      minify: false, // Must be false to avoid variable collision with Vue imports
       rollupOptions: {
         // External: things that exist at runtime (scripts directory)
         external: (id) => {
@@ -131,7 +133,7 @@ async function bundleJavaScript(entryPath, outputFileName, outputDir) {
 /**
  * Generate the decorator file that AEM EDS will load
  */
-async function generateDecoratorFile(blockName, blockSrcDir, blockDistDir, configFile) {
+async function generateDecoratorFile(blockName: string, blockSrcDir: string, blockDistDir: string, configFile: string): Promise<void> {
   const tempJsFile = join(blockDistDir, `${blockName}.temp.js`);
   const bundledConfigFile = join(blockDistDir, `${blockName}.config.bundled.js`);
   const finalJsFile = join(blockDistDir, `${blockName}.js`);
@@ -182,7 +184,7 @@ export default createVueBlockDecorator(VueComponent, ${extractorFunctionName});
 /**
  * Copy CSS file from src to dist
  */
-async function copyCssFile(cssFile, blockSrcDir, blockDistDir) {
+async function copyCssFile(cssFile: string, blockSrcDir: string, blockDistDir: string): Promise<void> {
   const cssSrc = join(blockSrcDir, cssFile);
   const cssDest = join(blockDistDir, cssFile);
   await copyFile(cssSrc, cssDest);
@@ -192,7 +194,7 @@ async function copyCssFile(cssFile, blockSrcDir, blockDistDir) {
 /**
  * Build a single Vue block
  */
-async function buildBlock(blockName) {
+async function buildBlock(blockName: string): Promise<void> {
   const blockSrcDir = join(srcBlocksDir, blockName);
   const blockDistDir = join(distBlocksDir, blockName);
 
@@ -236,8 +238,8 @@ async function buildBlock(blockName) {
 /**
  * Clean the blocks directory
  */
-async function cleanBlocks() {
-  console.log('🧹 Cleaning blocks directory...');
+async function cleanBlocks(): Promise<void> {
+  console.log('Cleaning blocks directory...');
 
   if (existsSync(distBlocksDir)) {
     const entries = await readdir(distBlocksDir, { withFileTypes: true });
@@ -250,7 +252,7 @@ async function cleanBlocks() {
 /**
  * Main build function
  */
-async function buildAll() {
+async function buildAll(): Promise<void> {
   try {
     console.log('Starting block build process...\n');
 
