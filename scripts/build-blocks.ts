@@ -69,18 +69,17 @@ async function compileVueComponent(blockName: string, vueFile: string, blockSrcD
       lib: {
         entry: vueFilePath,
         name: `${blockName}Component`,
-        fileName: () => `${blockName}.temp.js`,
+        fileName: () => `${blockName}.component.js`,
         formats: ['es'],
       },
       outDir: blockDistDir,
       emptyOutDir: false,
-      minify: true, // Minify for production performance
+      minify: true,
       rollupOptions: {
-        // External: only Vue and scripts/ directory (runtime dependencies)
         external: (id) => {
           if (id === 'vue') return true;
           if (id.includes('/scripts/')) return true;
-          // Bundle everything else (utilities from src/utils, src/services, etc.)
+          if (id.startsWith('primevue/')) return false;
           return false;
         },
         output: {
@@ -96,7 +95,6 @@ async function compileVueComponent(blockName: string, vueFile: string, blockSrcD
 
 /**
  * Bundle any JavaScript file (config, utils, etc.) with dependencies inlined
- * This uses the same bundling strategy as Vue components
  */
 async function bundleJavaScript(entryPath: string, outputFileName: string, outputDir: string): Promise<void> {
   await build({
@@ -110,13 +108,10 @@ async function bundleJavaScript(entryPath: string, outputFileName: string, outpu
       },
       outDir: outputDir,
       emptyOutDir: false,
-      minify: false, // Must be false to avoid variable collision with Vue imports
+      minify: false,
       rollupOptions: {
-        // External: things that exist at runtime (scripts directory)
         external: (id) => {
-          // Keep scripts/* external (runtime dependencies)
           if (id.includes('/scripts/')) return true;
-          // Bundle everything else (utilities from src/utils, services, etc.)
           return false;
         },
         output: {
@@ -134,32 +129,25 @@ async function bundleJavaScript(entryPath: string, outputFileName: string, outpu
  * Generate the decorator file that AEM EDS will load
  */
 async function generateDecoratorFile(blockName: string, blockSrcDir: string, blockDistDir: string, configFile: string): Promise<void> {
-  const tempJsFile = join(blockDistDir, `${blockName}.temp.js`);
-  const bundledConfigFile = join(blockDistDir, `${blockName}.config.bundled.js`);
+  const componentFile = join(blockDistDir, `${blockName}.component.js`);
+  const configBundledFile = join(blockDistDir, `${blockName}.config.js`);
   const finalJsFile = join(blockDistDir, `${blockName}.js`);
 
-  // Read compiled Vue component
-  let compiledVueContent = await readFile(tempJsFile, 'utf-8');
-
-  // Extract the Vue component variable name from the default export
+  let compiledVueContent = await readFile(componentFile, 'utf-8');
   compiledVueContent = compiledVueContent.replace(
     EXPORT_DEFAULT_REGEX,
     'const VueComponent = $1;'
   );
 
-  // Read bundled config file (includes all utilities inlined)
-  let bundledConfigContent = await readFile(bundledConfigFile, 'utf-8');
+  let bundledConfigContent = await readFile(configBundledFile, 'utf-8');
 
-  // Extract the data extractor function name from the original config
   const configPath = join(blockSrcDir, configFile);
   const originalConfigContent = await readFile(configPath, 'utf-8');
   const extractorMatch = originalConfigContent.match(EXPORT_FUNCTION_REGEX);
   const extractorFunctionName = extractorMatch ? extractorMatch[1] : 'extractData';
 
-  // Remove the export statement from bundled config
   bundledConfigContent = bundledConfigContent.replace(/export\s*\{[^}]+\}\s*;?\s*$/m, '');
 
-  // Generate final decorator file - simple concatenation!
   const decoratorContent = `import { createVueBlockDecorator } from '../../scripts/vue-utils.js';
 
 // Vue component (compiled)
@@ -174,9 +162,8 @@ export default createVueBlockDecorator(VueComponent, ${extractorFunctionName});
 
   await writeFile(finalJsFile, decoratorContent);
 
-  // Clean up temp files
-  await rm(tempJsFile);
-  await rm(bundledConfigFile);
+  await rm(componentFile);
+  await rm(configBundledFile);
 
   console.log(`Generated decorator`);
 }
@@ -218,18 +205,15 @@ async function buildBlock(blockName: string): Promise<void> {
 
   // Generate decorator with config if exists
   if (configFile) {
-    // Bundle config file (inlines utilities) using the same logic as everything else
     const configPath = join(blockSrcDir, configFile);
-    await bundleJavaScript(configPath, `${blockName}.config.bundled.js`, blockDistDir);
-    // Generate final decorator
+    await bundleJavaScript(configPath, `${blockName}.config.js`, blockDistDir);
     await generateDecoratorFile(blockName, blockSrcDir, blockDistDir, configFile);
   } else {
-    // No config - just use the compiled component
-    const tempFile = join(blockDistDir, `${blockName}.temp.js`);
+    const componentFile = join(blockDistDir, `${blockName}.component.js`);
     const finalFile = join(blockDistDir, `${blockName}.js`);
-    const content = await readFile(tempFile, 'utf-8');
+    const content = await readFile(componentFile, 'utf-8');
     await writeFile(finalFile, content);
-    await rm(tempFile);
+    await rm(componentFile);
   }
 
   console.log(`  ✓ Built ${blockName}.js`);
