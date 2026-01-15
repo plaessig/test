@@ -25,7 +25,6 @@ const projectRoot = resolve(__dirname, '..');
 const srcBlocksDir = resolve(projectRoot, 'src/blocks');
 const distBlocksDir = resolve(projectRoot, 'blocks');
 
-const IMPORT_REGEX = /import\s+.*?from\s+['"].*?['"];?\s*\n?/g;
 const EXPORT_DEFAULT_REGEX = /export\s*\{\s*(\w+)\s+as\s+default\s*\};?/;
 const EXPORT_FUNCTION_REGEX = /export\s+function\s+(\w+)/;
 
@@ -73,11 +72,19 @@ async function compileVueComponent(blockName, vueFile, blockSrcDir, blockDistDir
       },
       outDir: blockDistDir,
       emptyOutDir: false,
+      minify: false, // Don't minify - keeps variable names predictable
       rollupOptions: {
-        external: ['vue'],
+        // External: only Vue and scripts/ directory (runtime dependencies)
+        external: (id) => {
+          if (id === 'vue') return true;
+          if (id.includes('/scripts/')) return true;
+          // Bundle everything else (utilities from src/utils, src/services, etc.)
+          return false;
+        },
         output: {
           format: 'es',
           inlineDynamicImports: true,
+          preserveModules: false,
         },
       },
     },
@@ -86,25 +93,47 @@ async function compileVueComponent(blockName, vueFile, blockSrcDir, blockDistDir
 }
 
 /**
- * Extract imports from config file content
+ * Bundle any JavaScript file (config, utils, etc.) with dependencies inlined
+ * This uses the same bundling strategy as Vue components
  */
-function extractImports(configContent) {
-  const imports = [];
-  let match;
-  while ((match = IMPORT_REGEX.exec(configContent)) !== null) {
-    imports.push(match[0].trim());
-  }
-  return imports;
+async function bundleJavaScript(entryPath, outputFileName, outputDir) {
+  await build({
+    configFile: false,
+    build: {
+      lib: {
+        entry: entryPath,
+        name: 'Bundle',
+        fileName: () => outputFileName,
+        formats: ['es'],
+      },
+      outDir: outputDir,
+      emptyOutDir: false,
+      minify: false, // Don't minify - keeps variable names predictable
+      rollupOptions: {
+        // External: things that exist at runtime (scripts directory)
+        external: (id) => {
+          // Keep scripts/* external (runtime dependencies)
+          if (id.includes('/scripts/')) return true;
+          // Bundle everything else (utilities from src/utils, services, etc.)
+          return false;
+        },
+        output: {
+          format: 'es',
+          inlineDynamicImports: true,
+          preserveModules: false,
+        },
+      },
+    },
+    logLevel: 'warn',
+  });
 }
 
 /**
  * Generate the decorator file that AEM EDS will load
  */
 async function generateDecoratorFile(blockName, blockSrcDir, blockDistDir, configFile) {
-  const configPath = join(blockSrcDir, configFile);
-  const configContent = await readFile(configPath, 'utf-8');
-
   const tempJsFile = join(blockDistDir, `${blockName}.temp.js`);
+  const bundledConfigFile = join(blockDistDir, `${blockName}.config.bundled.js`);
   const finalJsFile = join(blockDistDir, `${blockName}.js`);
 
   // Read compiled Vue component
@@ -116,29 +145,37 @@ async function generateDecoratorFile(blockName, blockSrcDir, blockDistDir, confi
     'const VueComponent = $1;'
   );
 
-  // Extract the data extractor function name
-  const extractorMatch = configContent.match(EXPORT_FUNCTION_REGEX);
+  // Read bundled config file (includes all utilities inlined)
+  let bundledConfigContent = await readFile(bundledConfigFile, 'utf-8');
+
+  // Extract the data extractor function name from the original config
+  const configPath = join(blockSrcDir, configFile);
+  const originalConfigContent = await readFile(configPath, 'utf-8');
+  const extractorMatch = originalConfigContent.match(EXPORT_FUNCTION_REGEX);
   const extractorFunctionName = extractorMatch ? extractorMatch[1] : 'extractData';
 
-  // Hoist imports from config to top of file
-  const configImports = extractImports(configContent);
-  const configContentWithoutImports = configContent.replace(IMPORT_REGEX, '').trim();
+  // Remove the export statement from bundled config
+  bundledConfigContent = bundledConfigContent.replace(/export\s*\{[^}]+\}\s*;?\s*$/m, '');
 
-  // Generate final decorator file
+  // Generate final decorator file - simple concatenation!
   const decoratorContent = `import { createVueBlockDecorator } from '../../scripts/vue-utils.js';
-${configImports.length > 0 ? configImports.join('\n') + '\n' : ''}
+
 // Vue component (compiled)
 ${compiledVueContent}
 
-// Data extractor
-${configContentWithoutImports}
+// Data extractor with bundled utilities
+${bundledConfigContent}
 
 // Export the decorator function
 export default createVueBlockDecorator(VueComponent, ${extractorFunctionName});
 `;
 
   await writeFile(finalJsFile, decoratorContent);
+
+  // Clean up temp files
   await rm(tempJsFile);
+  await rm(bundledConfigFile);
+
   console.log(`Generated decorator`);
 }
 
@@ -179,6 +216,10 @@ async function buildBlock(blockName) {
 
   // Generate decorator with config if exists
   if (configFile) {
+    // Bundle config file (inlines utilities) using the same logic as everything else
+    const configPath = join(blockSrcDir, configFile);
+    await bundleJavaScript(configPath, `${blockName}.config.bundled.js`, blockDistDir);
+    // Generate final decorator
     await generateDecoratorFile(blockName, blockSrcDir, blockDistDir, configFile);
   } else {
     // No config - just use the compiled component
@@ -196,7 +237,7 @@ async function buildBlock(blockName) {
  * Clean the blocks directory
  */
 async function cleanBlocks() {
-  console.log(' Cleaning blocks directory...');
+  console.log('🧹 Cleaning blocks directory...');
 
   if (existsSync(distBlocksDir)) {
     const entries = await readdir(distBlocksDir, { withFileTypes: true });

@@ -34,15 +34,19 @@ This project uses Vue 3 components to build AEM Edge Delivery Services blocks. V
 
 ```
 project/
-├── src/blocks/                    # Source Vue components (committed to git)
-│   └── cards/
-│       ├── Cards.vue              # Vue component
-│       ├── cards.css              # Component styles
-│       └── cards.config.js        # Data extractor
+├── src/
+│   ├── blocks/                    # Source Vue components (committed to git)
+│   │   └── cards/
+│   │       ├── Cards.vue          # Vue component
+│   │       ├── cards.css          # Component styles
+│   │       └── cards.config.js    # Data extractor
+│   │
+│   └── utils/                     # Shared utilities (committed to git)
+│       └── block-config.js        # Reusable block helpers
 │
 ├── blocks/                        # Generated blocks (gitignored, built in CI)
 │   └── cards/
-│       ├── cards.js               # Compiled decorator
+│       ├── cards.js               # Compiled decorator (utils bundled inline)
 │       └── cards.css              # Copied styles
 │
 ├── scripts/
@@ -113,7 +117,7 @@ mkdir -p src/blocks/myblock
     <h2>{{ title }}</h2>
     <ul>
       <li v-for="(item, index) in items" :key="index">
-        {{ item.text }}
+        {{ processText(item.text) }}
       </li>
     </ul>
   </div>
@@ -121,6 +125,7 @@ mkdir -p src/blocks/myblock
 
 <script setup>
 import { defineProps } from 'vue';
+import { capitalize } from '../../utils/string-utils.js';
 
 defineProps({
   items: {
@@ -136,6 +141,9 @@ defineProps({
     default: 'default',
   },
 });
+
+// You can import and use utilities in Vue components!
+const processText = (text) => capitalize(text);
 </script>
 ```
 
@@ -144,6 +152,7 @@ defineProps({
 - ✅ Put all CSS in a separate `.css` file
 - ✅ Always provide default values for optional props
 - ✅ Use camelCase for prop names
+- ✅ You can import utilities from `src/utils/` - they'll be bundled automatically!
 
 ### Step 3: Create the CSS File
 
@@ -189,6 +198,7 @@ defineProps({
 
 ```javascript
 import { createOptimizedPicture } from '../../scripts/aem.js';
+import { extractConfigRows, filterContentRows } from '../../utils/block-config.js';
 
 /**
  * Extract data from the block element
@@ -196,34 +206,11 @@ import { createOptimizedPicture } from '../../scripts/aem.js';
  * @returns {Object} Props for the Vue component
  */
 export function extractMyBlockData(block) {
-  const config = {};
-  const rows = [...block.children];
+  // Extract config rows (rows without images in first cell)
+  const config = extractConfigRows(block);
 
-  // Separate config rows from content rows
-  const contentRows = rows.filter((row) => {
-    const cells = [...row.children];
-    if (cells.length < 1) return false;
-
-    const firstCell = cells[0];
-    const hasImage = firstCell.querySelector('img') !== null;
-
-    if (!hasImage && cells.length >= 2) {
-      // This is a config row - extract the prop
-      const key = firstCell.textContent.trim();
-      const value = cells[1].textContent.trim();
-      if (key && value) {
-        // Convert "Key Name" to "keyName" (camelCase)
-        const propKey = key
-          .replace(/[^a-zA-Z0-9\s]/g, '')
-          .replace(/\s(.)/g, (_, char) => char.toUpperCase())
-          .replace(/^(.)/, (_, char) => char.toLowerCase());
-        config[propKey] = value;
-      }
-      return false; // Exclude from content rows
-    }
-
-    return true; // Include in content rows
-  });
+  // Get only content rows (rows with images in first cell)
+  const contentRows = filterContentRows(block);
 
   // Extract content data from content rows
   const items = contentRows.map((row) => {
@@ -309,9 +296,55 @@ npm run build
 # Refresh browser (Ctrl+Shift+R)
 ```
 
+### Using Shared Utilities
+
+The `src/utils/` directory contains reusable utilities that can be imported **anywhere** in your block code:
+
+**Example: `src/utils/block-config.js`**
+
+This provides common helpers for extracting configuration and content from block tables:
+- `extractConfigRows(block)` - Extracts config props from rows without images
+- `filterContentRows(block)` - Returns only content rows (with images)
+- `toCamelCase(str)` - Converts "Border Color" → "borderColor"
+
+**How it works:**
+- Import utilities in **Vue components** or **config files**: 
+  ```javascript
+  // In Cards.vue
+  import { myHelper } from '../../utils/my-helper.js';
+  
+  // In cards.config.js
+  import { extractConfigRows } from '../../utils/block-config.js';
+  ```
+- During build, Vite **automatically bundles** the utility code into the block's output
+- Works for both Vue components AND config files
+- Each block becomes self-contained with no external dependencies (except Vue and scripts/)
+- No utils directory is created at the project root - everything is inlined
+
+**Universal Bundling:**
+The build system automatically bundles:
+- ✅ Utilities imported in Vue components → bundled into compiled component
+- ✅ Utilities imported in config files → bundled into config
+- ✅ Services from `src/services/` → bundled
+- ✅ Any other imports from `src/` → bundled
+- ❌ Imports from `scripts/` → kept external (runtime dependencies)
+- ❌ Vue imports → kept external
+
+**Advantages:**
+- ✅ Clean project root - no generated directories
+- ✅ Each block is self-contained and portable
+- ✅ Works consistently everywhere - Vue components, config files, anywhere
+- ✅ No runtime dependency issues
+- ✅ Utilities are automatically minified and optimized
+
+**Adding new utilities:**
+1. Create files in `src/utils/` (or `src/services/`, `src/helpers/`, etc.)
+2. Import them anywhere in your block code
+3. Run build - utilities are automatically bundled into the block output
+
 ### Development Checklist
 
-1. ✅ Edit source files in `src/blocks/`
+1. ✅ Edit source files in `src/blocks/` or `src/utils/`
 2. ✅ Run `npm run build` (or use watch mode)
 3. ✅ Hard refresh browser (`Ctrl+Shift+R`)
 4. ✅ Test in browser

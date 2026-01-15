@@ -1,4 +1,5 @@
-import { createOptimizedPicture } from '../../scripts/aem.js';
+import { createOptimizedPicture } from '../../../scripts/aem.js';
+import { extractConfigRows, filterContentRows } from '../../utils/block-config.js';
 
 /**
  * Extract card data from the block element
@@ -6,36 +7,11 @@ import { createOptimizedPicture } from '../../scripts/aem.js';
  * @returns {Object} Props for the Cards component
  */
 export function extractCardData(block) {
-  const config = {};
-  const rows = [...block.children];
+  // Extract config rows (rows without images in first cell)
+  const config = extractConfigRows(block);
 
-  // Separate config rows from content rows
-  // Config rows: first cell has NO image (just text) - these are author props
-  // Content rows: first cell has an image - these are the cards
-  const contentRows = rows.filter((row, index) => {
-    const cells = [...row.children];
-    if (cells.length < 2) return false;
-
-    const firstCell = cells[0];
-    const hasImage = firstCell.querySelector('img') !== null;
-
-    if (!hasImage) {
-      // This is a config row - extract the prop
-      const key = firstCell.textContent.trim();
-      const value = cells[1].textContent.trim();
-      if (key && value) {
-        // Convert to camelCase for Vue props (e.g., "Border Color" -> "borderColor")
-        const propKey = key
-          .replace(/[^a-zA-Z0-9\s]/g, '')
-          .replace(/\s(.)/g, (_, char) => char.toUpperCase())
-          .replace(/^(.)/, (_, char) => char.toLowerCase());
-        config[propKey] = value;
-      }
-      return false; // Exclude from content rows
-    }
-
-    return true; // Include in content rows
-  });
+  // Filter to get only content rows (rows with images in first cell)
+  const contentRows = filterContentRows(block);
 
   // Extract card data from content rows only
   const cardData = contentRows.map((row) => {

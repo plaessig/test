@@ -9,10 +9,15 @@
       <div class="cards-card-body" v-html="card.body"></div>
     </li>
   </ul>
-  <p>Test123</p>
+  <p>{{ processText }}</p>
 </template>
 <script setup>
-import { defineProps } from 'vue';
+import {computed, defineProps} from 'vue';
+import {slugify} from "../../utils/string-utils.js";
+
+const processText  = computed(() => {
+  return slugify('hello world');
+});
 
 defineProps({
   cards: {
