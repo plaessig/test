@@ -1,82 +1,5 @@
-import { createVueBlockDecorator } from '../../scripts/vue-utils.js';
 import { createOptimizedPicture } from '../../scripts/aem.js';
 
-// Vue component (compiled)
-import { createElementBlock as t, openBlock as l, Fragment as d, createElementVNode as r, normalizeStyle as s, renderList as i, normalizeClass as c } from "vue";
-const u = ["innerHTML"], m = ["innerHTML"], b = {
-  __name: "Cards",
-  props: {
-    cards: {
-      type: Array,
-      required: !0
-    },
-    // Optional props that authors can configure
-    borderColor: {
-      type: String,
-      default: "#dadada"
-    },
-    theme: {
-      type: String,
-      default: "default"
-    }
-  },
-  setup(e) {
-    return (y, n) => (l(), t(
-      d,
-      null,
-      [
-        r(
-          "ul",
-          {
-            style: s({ "--border-color": e.borderColor, "--card-theme": e.theme })
-          },
-          [
-            (l(!0), t(
-              d,
-              null,
-              i(e.cards, (a, o) => (l(), t(
-                "li",
-                {
-                  key: o,
-                  class: c(["card-item", e.theme])
-                },
-                [
-                  r("div", {
-                    class: "cards-card-image",
-                    innerHTML: a.picture
-                  }, null, 8, u),
-                  r("div", {
-                    class: "cards-card-body",
-                    innerHTML: a.body
-                  }, null, 8, m)
-                ],
-                2
-                /* CLASS */
-              ))),
-              128
-              /* KEYED_FRAGMENT */
-            ))
-          ],
-          4
-          /* STYLE */
-        ),
-        n[0] || (n[0] = r(
-          "p",
-          null,
-          "Test123",
-          -1
-          /* CACHED */
-        ))
-      ],
-      64
-      /* STABLE_FRAGMENT */
-    ));
-  }
-};
-const VueComponent = b;
-
-
-// Data extractor
 /**
  * Extract card data from the block element
  * @param {Element} block - The block element
@@ -145,5 +68,3 @@ export function extractCardData(block) {
   };
 }
 
-// Export the decorator function
-export default createVueBlockDecorator(VueComponent, extractCardData);

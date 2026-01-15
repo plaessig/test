@@ -3,6 +3,10 @@ coverage/*
 logs/*
 node_modules/*
 
+# Generated blocks - built from src/blocks
+blocks/*
+dist
+
 helix-importer-ui
 .DS_Store
 *.bak
