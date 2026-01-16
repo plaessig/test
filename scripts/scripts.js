@@ -11,6 +11,8 @@ import {
   loadSection,
   loadSections,
   loadCSS,
+  decorateBlock,
+  loadBlock,
 } from './aem.js';
 
 /**
@@ -41,6 +43,42 @@ async function loadFonts() {
     if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
   } catch (e) {
     // do nothing
+  }
+}
+
+/**
+ * Loads the nav sidebar block
+ * Content is loaded from /nav.plain.html (the standard EDS nav document)
+ */
+async function loadNav() {
+  try {
+    // Fetch the nav content from /nav document (standard EDS location)
+    const resp = await fetch('/nav.plain.html');
+    if (!resp.ok) {
+      console.warn('No nav document found. Create a Google Doc named "nav" with your sidebar table.');
+      return;
+    }
+
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Find the nav block in the nav document
+    const navBlock = doc.querySelector('.nav');
+
+    if (navBlock) {
+      // Remove from parsed doc and add to body
+      navBlock.remove();
+      document.body.prepend(navBlock);
+
+      // Decorate and load the block
+      decorateBlock(navBlock);
+      await loadBlock(navBlock);
+    } else {
+      console.warn('No nav block found in nav document. Add a Nav table to your "nav" Google Doc.');
+    }
+  } catch (error) {
+    console.error('Failed to load nav sidebar:', error);
   }
 }
 
@@ -118,6 +156,7 @@ async function loadEager(doc) {
  * @param {Element} doc The container element
  */
 async function loadLazy(doc) {
+  loadNav(); // Load nav sidebar
   loadHeader(doc.querySelector('header'));
 
   const main = doc.querySelector('main');
