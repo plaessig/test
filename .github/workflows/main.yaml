@@ -1,15 +1,50 @@
-name: Build
-on: [push]
+name: Build (EDS blocks)
+
+on:
+  push:
+    branches:
+      - "**"
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # Don't run on our own generated commits
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
     steps:
-    - uses: actions/checkout@v6
-    - name: Use Node.js 20
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24
-    - run: npm ci
-    - run: npm run build
-#    - run: npm run lint re-enable later
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Build generated blocks/ from src/blocks
+      - run: npm run build
+
+      # Commit back only if blocks changed
+      - name: Commit generated blocks back
+        run: |
+          git config user.name "eds-build-bot"
+          git config user.email "eds-build-bot@users.noreply.github.com"
+
+          # Stage only generated output
+          git add -A blocks
+
+          # If nothing changed, stop
+          if git diff --cached --quiet; then
+            echo "No changes in blocks/. Nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: build blocks [skip ci]"
+          git push
