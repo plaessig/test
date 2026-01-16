@@ -1,0 +1,93 @@
+/* Header block root */
+.site-header {
+  /* Layout vars (can be set globally) */
+  --header-h: var(--nav-height, 64px);
+  --sidebar-w: var(--sidebar-width, 220px);
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  background: var(--background-color, #fff);
+  border-bottom: 1px solid var(--portal-border, rgb(0 0 0 / 8%));
+  z-index: 999;
+}
+
+/* Inner layout */
+.site-header .header-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+/* Left area: reserved space for later (title/breadcrumbs) */
+.site-header .header-left {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Right cluster */
+.site-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Profile icon */
+.site-header .profile-icon {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.site-header .profile-icon:hover {
+  opacity: 0.85;
+}
+
+.site-header .profile-avatar {
+  background-color: #1e40af;
+  color: #fff;
+}
+
+/* Language */
+.site-header .language-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.site-header .language-dropdown {
+  width: 150px;
+}
+
+/* Ensure PrimeVue dropdown content aligns nicely */
+.site-header .language-dropdown .p-dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Mobile: header spans full width (sidebar usually collapses) */
+@media (width <= 768px) {
+  .site-header {
+    left: 0;
+  }
+
+  .site-header .header-content {
+    padding: 0 1rem;
+  }
+
+  .site-header .header-right {
+    gap: 0.75rem;
+  }
+
+  .site-header .language-dropdown {
+    width: 130px;
+  }
+}
