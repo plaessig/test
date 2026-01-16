@@ -14,7 +14,7 @@
         <div class="cards-card-image" v-html="card.picture"></div>
       </template>
       <template #title v-if="card.title">
-        {{ `${card.title} test this again `}}
+        {{ `${card.title}`}}
       </template>
       <template #content>
         <div class="cards-card-content" v-html="card.body"></div>
@@ -39,7 +39,7 @@ interface CardData {
   picture: string;
   body: string;
   title?: string;
-  buttonText?: string; // If provided, button shows with this text. If empty/undefined, no button
+  buttonText?: string;
 }
 
 interface Props {
