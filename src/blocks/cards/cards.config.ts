@@ -1,54 +1,26 @@
-import { createOptimizedPicture } from '../../../scripts/aem.js';
-import { extractConfigRows, filterContentRows } from '../../utils/block-config.ts';
+import { extractConfigRows, filterContentRows, cellPictureHtml, cellHtml, optionalCellText } from '../../utils/block-config.ts';
 
 interface CardData {
   picture: string;
   body: string;
+  title?: string;
+  buttonText?: string;
 }
 
-interface CardsProps {
-  cards: CardData[];
-  [key: string]: any; // For dynamic config props like borderColor, theme, etc.
-}
-
-/**
- * Extract card data from the block element
- */
-export function extractCardData(block: Element): CardsProps {
-  // Extract config rows (rows without images in first cell)
+export function extractCardData(block: Element) {
   const config = extractConfigRows(block);
-
-  // Filter to get only content rows (rows with images in first cell)
   const contentRows = filterContentRows(block);
 
-  // Extract card data from content rows only
-  const cardData: CardData[] = contentRows.map((row) => {
-    const cells = [...row.children];
-
-    // First cell is the image
-    const imageDiv = cells[0] as HTMLElement;
-    let pictureHTML = '';
-
-    if (imageDiv) {
-      const img = imageDiv.querySelector('img');
-      if (img) {
-        const optimizedPicture = createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }]);
-        pictureHTML = optimizedPicture.outerHTML;
-      }
-    }
-
-    // Second cell is the body
-    const bodyDiv = cells[1] as HTMLElement;
+  const cards: CardData[] = contentRows.map((row, _idx) => {
+    const cells = [...row.children] as HTMLElement[];
 
     return {
-      picture: pictureHTML,
-      body: bodyDiv?.innerHTML || '',
+      picture: cellPictureHtml(cells[0], { width: 750 }),
+      body: cellHtml(cells[1]),
+      title: optionalCellText(cells[2]),
+      buttonText: optionalCellText(cells[3]),
     };
   });
 
-  return {
-    cards: cardData,
-    ...config, // Spread config props (borderColor, theme, etc.)
-  };
+  return { ...config, cards };
 }
-

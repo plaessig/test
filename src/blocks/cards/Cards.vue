@@ -1,6 +1,10 @@
 <template>
   <!-- PrimeVue Cards Grid -->
-  <div class="cards-container">
+  <div
+    class="cards-container"
+    :class="theme ? `cards-theme-${theme}` : ''"
+    :style="borderColor ? `--cards-border-color: ${borderColor}` : ''"
+  >
     <Card
       v-for="(card, index) in cards"
       :key="index"
@@ -9,19 +13,16 @@
       <template #header>
         <div class="cards-card-image" v-html="card.picture"></div>
       </template>
-      <template #title>
-        <span v-if="card.title">{{ card.title }}</span>
-        <span v-else>Card {{ index + 1 }}</span>
+      <template #title v-if="card.title">
+        {{ `${card.title} test this again `}}
       </template>
       <template #content>
         <div class="cards-card-content" v-html="card.body"></div>
       </template>
-      <template #footer>
+      <template #footer v-if="card.buttonText">
         <div class="card-footer">
           <Button
-            label="Test234"
-            icon="pi pi-arrow-right"
-            iconPos="right"
+            :label="card.buttonText"
             size="small"
           />
         </div>
@@ -38,6 +39,7 @@ interface CardData {
   picture: string;
   body: string;
   title?: string;
+  buttonText?: string; // If provided, button shows with this text. If empty/undefined, no button
 }
 
 interface Props {

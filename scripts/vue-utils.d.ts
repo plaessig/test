@@ -1,14 +1,13 @@
-/**
- * Type declarations for Vue utilities
- */
-
 import type { Component } from 'vue';
 
-/**
- * Create a Vue block decorator function
- */
-export function createVueBlockDecorator<T = any>(
-  component: Component,
-  dataExtractor: (block: Element) => T
-): (block: Element) => void;
+export type BlockExtractor<Props = any> = (block: Element) => Props;
 
+export type BlockDecorator = (block: Element) => any;
+
+/**
+ * Creates a decorator function for EDS blocks using Vue
+ */
+export function createVueBlockDecorator<Props>(
+    component: Component,
+    extractor: BlockExtractor<Props>
+): BlockDecorator;
