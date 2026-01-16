@@ -1,0 +1,45 @@
+/* Works whether EDS wrapper is .columns or your Vue root is .columns-wrapper */
+.columns .columns-row,
+.columns-wrapper .columns-row {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+/* Each column */
+.columns .columns-col,
+.columns-wrapper .columns-col {
+    min-width: 0;
+    flex: 1 1 0;
+}
+
+/* Images behave */
+.columns .columns-col picture,
+.columns .columns-col img,
+.columns-wrapper .columns-col picture,
+.columns-wrapper .columns-col img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Optional: image column slightly narrower (boilerplate-ish) */
+.columns .columns-img-col,
+.columns-wrapper .columns-img-col {
+    flex: 0 0 45%;
+}
+
+/* Mobile: stack */
+@media (max-width: 899px) {
+    .columns .columns-row,
+    .columns-wrapper .columns-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .columns .columns-img-col,
+    .columns-wrapper .columns-img-col {
+        flex: 1 1 auto;
+    }
+}

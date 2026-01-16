@@ -1,14 +1,61 @@
-name: Build
-on: [push]
+name: EDS blocks
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-check:
+    # For PRs: just verify build works (no commit)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Use Node.js 20
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24
-    - run: npm ci
-    - run: npm run lint
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+  build-and-commit:
+    # For main: build + commit generated blocks back
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Commit generated blocks back to main
+        run: |
+          git config user.name "eds-build-bot"
+          git config user.email "eds-build-bot@users.noreply.github.com"
+
+          # blocks/ is typically gitignored locally -> force add
+          git add -f blocks
+
+          # nothing changed? stop
+          if git diff --cached --quiet; then
+            echo "No changes in blocks/. Nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: build blocks [skip ci]"
+          git push

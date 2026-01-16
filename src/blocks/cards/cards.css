@@ -1,0 +1,98 @@
+/* Cards block wrapper (EDS adds .cards on the block root) */
+.cards {
+  width: 100%;
+}
+
+/* Grid container */
+.cards .cards-container {
+  /* Customizable per block via inline style:
+     :style="borderColor ? `--cards-border-color: ${borderColor}` : ''"
+  */
+  --cards-border-color: #dee2e6;
+
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+
+  /* keep spacing controlled by section layout; avoid extra global padding */
+  margin: 0;
+}
+
+.cards .card-item {
+  border: 1px solid var(--cards-border-color);
+  border-radius: 12px;
+  overflow: hidden; /* <- neu */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Image area */
+.cards .cards-card-image {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--light-color, #f8f8f8);
+}
+
+.cards .cards-card-image picture,
+.cards .cards-card-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Content text */
+.cards .cards-card-content {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.cards .cards-card-content p {
+  margin: 0 0 0.5rem 0;
+}
+
+/* Footer alignment */
+.cards .card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Themes (apply to container: cards-theme-xxx) */
+.cards .cards-theme-dark .card-item {
+  background: #1e1e1e;
+  color: #ffffff;
+  border-color: #444;
+}
+
+.cards .cards-theme-light .card-item {
+  background: #ffffff;
+  color: #1e1e1e;
+  border-color: var(--cards-border-color);
+}
+
+.cards .cards-theme-primary .card-item {
+  border-color: #1e40af;
+  border-width: 2px;
+}
+
+/* PrimeVue button underline protection (minimal) */
+.cards .card-footer .p-button,
+.cards .card-footer .p-button:hover {
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cards .cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cards .cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}

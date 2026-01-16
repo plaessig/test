@@ -2,12 +2,17 @@
   "name": "@adobe/aem-boilerplate",
   "private": true,
   "version": "1.3.0",
+  "type": "module",
   "description": "Starter project for Adobe Helix",
   "scripts": {
+    "start": "vite --port 3000",
+    "build": "tsx scripts/build-blocks.ts",
+    "build:watch": "nodemon --watch src --ext vue,css,js,ts,json --ignore blocks/** --exec \"tsx scripts/build-blocks.ts\"",
     "lint:js": "eslint .",
-    "lint:css": "stylelint \"blocks/**/*.css\" \"styles/*.css\"",
+    "lint:css": "stylelint \"src/blocks/**/*.css\" \"styles/*.css\"",
     "lint": "npm run lint:js && npm run lint:css",
-    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix"
+    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix",
+    "type-check": "vue-tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -15,16 +20,26 @@
   },
   "author": "Adobe",
   "license": "Apache License 2.0",
-  "bugs": {
-    "url": "https://github.com/adobe/aem-boilerplate/issues"
+  "dependencies": {
+    "primevue": "^3.53.0",
+    "primeicons": "^7.0.0",
+    "vite": "7.3.1",
+    "vue": "3.5.26"
   },
-  "homepage": "https://github.com/adobe/aem-boilerplate#readme",
   "devDependencies": {
     "@babel/eslint-parser": "7.28.6",
+    "@types/node": "^22.10.5",
+    "@vitejs/plugin-vue": "6.0.3",
     "eslint": "8.57.1",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-vue": "^10.6.2",
+    "nodemon": "^3.1.9",
     "stylelint": "16.26.1",
-    "stylelint-config-standard": "39.0.1"
+    "stylelint-config-standard": "39.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vue-eslint-parser": "^10.2.0",
+    "vue-tsc": "^2.2.0"
   }
 }
