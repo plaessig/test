@@ -16,7 +16,7 @@
       >
         <span class="nav-toggle-icon">☰</span>
       </button>
-      <h2 v-if="!collapsed && title" class="nav-title">{{ title }}</h2>
+      <h2 v-if="!collapsed  && title" class="nav-title">{{ title }}</h2>
     </div>
 
     <ul class="nav-list">
