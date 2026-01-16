@@ -1,20 +1,34 @@
-name: Build (EDS blocks)
+name: EDS blocks
 
 on:
+  pull_request:
   push:
-    branches:
-      - "**"
+    branches: [ main ]
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-check:
+    # For PRs: just verify build works (no commit)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    # Don't run on our own generated commits
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
+      - run: npm ci
+      - run: npm run build
+
+  build-and-commit:
+    # For main: build + commit generated blocks back
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,20 +41,17 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      # Build generated blocks/ from src/blocks
       - run: npm run build
 
-      # Commit back only if blocks changed
-      - name: Commit generated blocks back
+      - name: Commit generated blocks back to main
         run: |
           git config user.name "eds-build-bot"
           git config user.email "eds-build-bot@users.noreply.github.com"
 
-          # Stage only generated output
-          git add -A blocks
+          # blocks/ is typically gitignored locally -> force add
+          git add -f blocks
 
-          # If nothing changed, stop
+          # nothing changed? stop
           if git diff --cached --quiet; then
             echo "No changes in blocks/. Nothing to commit."
             exit 0
