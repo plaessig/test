@@ -1,5 +1,15 @@
-// scripts/primevue.js
+/**
+ * @file This script configures and installs a mock version of PrimeVue for use in the application.
+ * It provides a default configuration and a function to install a simplified PrimeVue-like object
+ * into a Vue application instance. This is useful for environments where the full PrimeVue library
+ * is not needed or available.
+ */
 
+/**
+ * The default configuration for the mock PrimeVue instance.
+ * This object mimics the structure of a real PrimeVue configuration.
+ * @type {import('primevue/config').PrimeVueConfiguration}
+ */
 export const primeVueConfig = {
     ripple: false,
     inputStyle: 'outlined',
@@ -40,11 +50,21 @@ export const primeVueConfig = {
     },
 };
 
+/**
+ * A mock PrimeVue object that provides a simplified version of the $primevue global property.
+ * It includes the configuration and a no-op `changeTheme` function.
+ */
 const primevueObject = {
     config: primeVueConfig,
     changeTheme: () => {},
 };
 
+/**
+ * Installs the mock PrimeVue object and its configuration into a Vue application.
+ * This function provides the `$primevue` and `$primevueConfig` properties to all components
+ * in the application, both through `provide` and as global properties.
+ * @param {import('vue').App} app The Vue application instance.
+ */
 export function installPrimeVueLike(app) {
     app.provide('$primevue', primevueObject);
     app.provide('$primevueConfig', primeVueConfig);

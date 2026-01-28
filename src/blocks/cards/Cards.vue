@@ -24,16 +24,19 @@
           <Button
             :label="card.buttonText"
             size="small"
+            @click="sendRequest"
           />
         </div>
       </template>
     </Card>
   </div>
+  <p>{{ text }}</p>
 </template>
 
 <script setup lang="ts">
 import Card from 'primevue/card';
 import Button from 'primevue/button';
+import {ref} from "vue";
 
 interface CardData {
   picture: string;
@@ -47,6 +50,14 @@ interface Props {
   borderColor?: string;
   theme?: string;
 }
+
+const text = ref<string>('');
+
+const sendRequest = async () => {
+  // const response = await fetch("api URL");
+  // text.value = await response.text();
+  return "Api response";
+};
 
 defineProps<Props>();
 </script>
